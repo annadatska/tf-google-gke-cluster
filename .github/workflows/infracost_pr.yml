@@ -1,0 +1,32 @@
+name: Infracost PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  infracost:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Infracost
+        run: |
+          curl -sLO https://github.com/infracost/infracost/releases/latest/download/infracost-linux-amd64.tar.gz
+          tar -xzf infracost-linux-amd64.tar.gz
+          sudo mv infracost-linux-amd64 /usr/local/bin/infracost
+          infracost --version
+
+      - name: Run Infracost
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          infracost --no-color --format json --path .github/workflows/infracost-output.json --api-key $INFRACOST_API_KEY
+
+      - name: Upload Infracost results
+        uses: actions/upload-artifact@v2
+        with:
+          name: infracost-results
+          path: .github/workflows/infracost-output.json
